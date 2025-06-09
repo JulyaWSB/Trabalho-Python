@@ -25,6 +25,25 @@ Este é um sistema simples e funcional desenvolvido em **Python** utilizando **T
 
 ---
 
+## 📷 Screenshots
+
+### 🖥️ Interface Principal
+![Interface Principal](img/interface.png)
+
+### ⚠️ Erro: Nota deve ser entre 0 e 100
+![Erro Nota](img/erroNota.png)
+
+### ✏️ Aluno Alterado
+![Aluno Alterado](img/alunoAtualizado.png)
+
+### ➕ Aluno Adicionado
+![Aluno Adicionado](img/alunoSaolvo.png)
+
+### ❌ Aluno Excluído
+![Aluno Excluído](img/alunoExcluido.png)
+
+---
+
 ## 👩‍💻 Autor
 
 Desenvolvido por **Julya Werneck**, estudante de Ciência da Computação.
