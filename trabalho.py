@@ -20,10 +20,13 @@ class Aluno(Base):
 
 Base.metadata.create_all(engine)
 
+aluno_selecionado_id = None
+
 def validar_nota(nota):
     return 0 <= nota <= 100
 
 def adicionar_aluno():
+    global aluno_selecionado_id
     nome = entry_nome.get()
     try:
         nota1 = float(entry_nota1.get())
@@ -34,13 +37,28 @@ def adicionar_aluno():
         if not all(map(validar_nota, [nota1, nota2, nota3, nota4])):
             messagebox.showerror("Erro", "As notas devem estar entre 0 e 100!")
             return
-        
+
         media = (nota1 + nota2 + nota3 + nota4) / 4
-        aluno = Aluno(nome=nome, nota1=nota1, nota2=nota2, nota3=nota3, nota4=nota4, media=media)
-        session.add(aluno)
+
+        if aluno_selecionado_id is None:
+            aluno = Aluno(nome=nome, nota1=nota1, nota2=nota2, nota3=nota3, nota4=nota4, media=media)
+            session.add(aluno)
+            messagebox.showinfo("Sucesso", "Aluno adicionado com sucesso!")
+        else:
+            aluno = session.query(Aluno).get(aluno_selecionado_id)
+            if aluno:
+                aluno.nome = nome
+                aluno.nota1 = nota1
+                aluno.nota2 = nota2
+                aluno.nota3 = nota3
+                aluno.nota4 = nota4
+                aluno.media = media
+                messagebox.showinfo("Sucesso", "Aluno atualizado com sucesso!")
+            aluno_selecionado_id = None
+
         session.commit()
-        messagebox.showinfo("Sucesso", "Aluno adicionado com sucesso!")
         atualizar_lista()
+        limpar_campos()
     except ValueError:
         messagebox.showerror("Erro", "Insira notas válidas!")
 
@@ -48,83 +66,105 @@ def atualizar_lista():
     lista.delete(0, tk.END)
     alunos = session.query(Aluno).all()
     for aluno in alunos:
-        lista.insert(tk.END, f"{aluno.nome} - Média: {aluno.media:.2f}")
+        lista.insert(tk.END, f"{aluno.id} - {aluno.nome} - Média: {aluno.media:.2f}")
 
 def excluir_aluno():
+    global aluno_selecionado_id
     selecionado = lista.curselection()
     if not selecionado:
         messagebox.showwarning("Aviso", "Selecione um aluno para excluir!")
         return
-    aluno_nome = lista.get(selecionado).split(" - ")[0]
-    aluno = session.query(Aluno).filter_by(nome=aluno_nome).first()
+    aluno_id = int(lista.get(selecionado).split(" - ")[0])
+    aluno = session.query(Aluno).get(aluno_id)
     if aluno:
         session.delete(aluno)
         session.commit()
         atualizar_lista()
+        limpar_campos()
         messagebox.showinfo("Sucesso", "Aluno excluído!")
 
-def atualizar_aluno():
+def carregar_aluno():
+    global aluno_selecionado_id
     selecionado = lista.curselection()
     if not selecionado:
-        messagebox.showwarning("Aviso", "Selecione um aluno para atualizar!")
         return
-    aluno_nome = lista.get(selecionado).split(" - ")[0]
-    aluno = session.query(Aluno).filter_by(nome=aluno_nome).first()
+    aluno_id = int(lista.get(selecionado).split(" - ")[0])
+    aluno = session.query(Aluno).get(aluno_id)
     if aluno:
-        try:
-            aluno.nome = entry_nome.get()
-            aluno.nota1 = float(entry_nota1.get())
-            aluno.nota2 = float(entry_nota2.get())
-            aluno.nota3 = float(entry_nota3.get())
-            aluno.nota4 = float(entry_nota4.get())
+        aluno_selecionado_id = aluno.id
+        entry_nome.delete(0, tk.END)
+        entry_nome.insert(0, aluno.nome)
+        entry_nota1.delete(0, tk.END)
+        entry_nota1.insert(0, aluno.nota1)
+        entry_nota2.delete(0, tk.END)
+        entry_nota2.insert(0, aluno.nota2)
+        entry_nota3.delete(0, tk.END)
+        entry_nota3.insert(0, aluno.nota3)
+        entry_nota4.delete(0, tk.END)
+        entry_nota4.insert(0, aluno.nota4)
 
-            if not all(map(validar_nota, [aluno.nota1, aluno.nota2, aluno.nota3, aluno.nota4])):
-                messagebox.showerror("Erro", "As notas devem estar entre 0 e 100!")
-                return
-            
-            aluno.media = (aluno.nota1 + aluno.nota2 + aluno.nota3 + aluno.nota4) / 4
-            session.commit()
-            atualizar_lista()
-            messagebox.showinfo("Sucesso", "Aluno atualizado com sucesso!")
-        except ValueError:
-            messagebox.showerror("Erro", "Insira notas válidas!")
+def limpar_campos():
+    entry_nome.delete(0, tk.END)
+    entry_nota1.delete(0, tk.END)
+    entry_nota2.delete(0, tk.END)
+    entry_nota3.delete(0, tk.END)
+    entry_nota4.delete(0, tk.END)
 
 root = tk.Tk()
-root.title("Sistema de Média de Alunos")
+root.title("🎓 Sistema de Média de Alunos")
+root.configure(bg="#F8F4FF")
 
-frame = tk.Frame(root)
+fonte_titulo = ("Comic Sans MS", 20, "bold")
+fonte_normal = ("Comic Sans MS", 12)
+cor_botao = "#8e44ad"
+cor_botao_hover = "#9b59b6"
+cor_fundo = "#F8F4FF"
+cor_entrada = "#ffffff"
+
+frame = tk.Frame(root, bg=cor_fundo)
 frame.pack(pady=10)
 
-tk.Label(frame, text="Nome:").grid(row=0, column=0)
-entry_nome = tk.Entry(frame)
-entry_nome.grid(row=0, column=1)
+def criar_label(texto, linha):
+    label = tk.Label(frame, text=texto, bg=cor_fundo, fg="#2c3e50", font=fonte_normal)
+    label.grid(row=linha, column=0, sticky="e", pady=3)
+    return label
 
-tk.Label(frame, text="Nota 1:").grid(row=1, column=0)
-entry_nota1 = tk.Entry(frame)
-entry_nota1.grid(row=1, column=1)
+def criar_entry(linha):
+    entry = tk.Entry(frame, font=fonte_normal, bg=cor_entrada, fg="#2c3e50", bd=2, relief="groove")
+    entry.grid(row=linha, column=1, pady=3, padx=5)
+    return entry
 
-tk.Label(frame, text="Nota 2:").grid(row=2, column=0)
-entry_nota2 = tk.Entry(frame)
-entry_nota2.grid(row=2, column=1)
+criar_label("Nome:", 0)
+entry_nome = criar_entry(0)
 
-tk.Label(frame, text="Nota 3:").grid(row=3, column=0)
-entry_nota3 = tk.Entry(frame)
-entry_nota3.grid(row=3, column=1)
+criar_label("Nota 1:", 1)
+entry_nota1 = criar_entry(1)
 
-tk.Label(frame, text="Nota 4:").grid(row=4, column=0)
-entry_nota4 = tk.Entry(frame)
-entry_nota4.grid(row=4, column=1)
+criar_label("Nota 2:", 2)
+entry_nota2 = criar_entry(2)
 
-tk.Button(root, text="Adicionar Aluno", command=adicionar_aluno).pack()
+criar_label("Nota 3:", 3)
+entry_nota3 = criar_entry(3)
 
-tk.Label(root, text="Lista de Alunos:").pack()
-lista = tk.Listbox(root, width=40, height=10)
+criar_label("Nota 4:", 4)
+entry_nota4 = criar_entry(4)
+
+def criar_botao(texto, comando):
+    botao = tk.Button(root, text=texto, command=comando, bg=cor_botao, fg="white",
+                      font=fonte_normal, relief="flat", padx=10, pady=5)
+    botao.pack(pady=5)
+    botao.bind("<Enter>", lambda e: botao.config(bg=cor_botao_hover))
+    botao.bind("<Leave>", lambda e: botao.config(bg=cor_botao))
+    return botao
+
+criar_botao("Salvar Aluno (Adicionar/Atualizar)", adicionar_aluno)
+
+tk.Label(root, text="Lista de Alunos:", bg=cor_fundo, font=fonte_titulo, fg="#2c3e50").pack(pady=5)
+lista = tk.Listbox(root, width=50, height=10, font=("Courier New", 11), bg="white", fg="#2c3e50", bd=2, relief="groove")
 lista.pack()
+lista.bind("<<ListboxSelect>>", lambda event: carregar_aluno())
 
-tk.Button(root, text="Excluir Aluno", command=excluir_aluno).pack()
-
-tk.Button(root, text="Atualizar Aluno", command=atualizar_aluno).pack()
+criar_botao("Excluir Aluno", excluir_aluno)
 
 atualizar_lista()
 root.mainloop()
-
