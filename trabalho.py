@@ -45,7 +45,7 @@ def adicionar_aluno():
             session.add(aluno)
             messagebox.showinfo("Sucesso", "Aluno adicionado com sucesso!")
         else:
-            aluno = session.query(Aluno).get(aluno_selecionado_id)
+            aluno = session.get(Aluno, aluno_selecionado_id)
             if aluno:
                 aluno.nome = nome
                 aluno.nota1 = nota1
@@ -75,13 +75,14 @@ def excluir_aluno():
         messagebox.showwarning("Aviso", "Selecione um aluno para excluir!")
         return
     aluno_id = int(lista.get(selecionado).split(" - ")[0])
-    aluno = session.query(Aluno).get(aluno_id)
+    aluno = session.get(Aluno, aluno_id)
     if aluno:
         session.delete(aluno)
         session.commit()
         atualizar_lista()
         limpar_campos()
         messagebox.showinfo("Sucesso", "Aluno excluído!")
+        aluno_selecionado_id = None
 
 def carregar_aluno():
     global aluno_selecionado_id
@@ -89,7 +90,7 @@ def carregar_aluno():
     if not selecionado:
         return
     aluno_id = int(lista.get(selecionado).split(" - ")[0])
-    aluno = session.query(Aluno).get(aluno_id)
+    aluno = session.get(Aluno, aluno_id)
     if aluno:
         aluno_selecionado_id = aluno.id
         entry_nome.delete(0, tk.END)
@@ -120,17 +121,18 @@ cor_botao = "#8e44ad"
 cor_botao_hover = "#9b59b6"
 cor_fundo = "#F8F4FF"
 cor_entrada = "#ffffff"
+cor_texto = "#2c3e50"
 
 frame = tk.Frame(root, bg=cor_fundo)
 frame.pack(pady=10)
 
 def criar_label(texto, linha):
-    label = tk.Label(frame, text=texto, bg=cor_fundo, fg="#2c3e50", font=fonte_normal)
+    label = tk.Label(frame, text=texto, bg=cor_fundo, fg=cor_texto, font=fonte_normal)
     label.grid(row=linha, column=0, sticky="e", pady=3)
     return label
 
 def criar_entry(linha):
-    entry = tk.Entry(frame, font=fonte_normal, bg=cor_entrada, fg="#2c3e50", bd=2, relief="groove")
+    entry = tk.Entry(frame, font=fonte_normal, bg=cor_entrada, fg=cor_texto, bd=2, relief="groove")
     entry.grid(row=linha, column=1, pady=3, padx=5)
     return entry
 
@@ -159,8 +161,8 @@ def criar_botao(texto, comando):
 
 criar_botao("Salvar Aluno (Adicionar/Atualizar)", adicionar_aluno)
 
-tk.Label(root, text="Lista de Alunos:", bg=cor_fundo, font=fonte_titulo, fg="#2c3e50").pack(pady=5)
-lista = tk.Listbox(root, width=50, height=10, font=("Courier New", 11), bg="white", fg="#2c3e50", bd=2, relief="groove")
+tk.Label(root, text="Lista de Alunos:", bg=cor_fundo, font=fonte_titulo, fg=cor_texto).pack(pady=5)
+lista = tk.Listbox(root, width=50, height=10, font=("Courier New", 11), bg="white", fg=cor_texto, bd=2, relief="groove")
 lista.pack()
 lista.bind("<<ListboxSelect>>", lambda event: carregar_aluno())
 
